@@ -12,12 +12,22 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({ teachers, stude
   const [activeTab, setActiveTab] = useState('teachers');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredTeachers = useMemo(() => 
-    teachers.filter(t => 
+  const groupedAndFilteredTeachers = useMemo(() => {
+    const filtered = teachers.filter(t => 
       t.username.toLowerCase().includes(searchTerm.toLowerCase()) || 
       t.email.toLowerCase().includes(searchTerm.toLowerCase())
-    ), [teachers, searchTerm]
-  );
+    );
+
+    return filtered.reduce((acc, teacher) => {
+        const dept = teacher.department || 'Uncategorized';
+        if (!acc[dept]) {
+            acc[dept] = [];
+        }
+        acc[dept].push(teacher);
+        return acc;
+    }, {} as { [key: string]: TeacherUser[] });
+  }, [teachers, searchTerm]);
+
 
   const filteredStudents = useMemo(() => 
     students.filter(s => 
@@ -65,19 +75,28 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({ teachers, stude
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {activeTab === 'teachers' && filteredTeachers.map(user => (
-                <tr key={user.id}>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <img className="h-10 w-10 rounded-full object-cover" src={user.profileImageUrl} alt="" />
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.username}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.department}</td>
-                </tr>
+              {activeTab === 'teachers' && Object.keys(groupedAndFilteredTeachers).sort().map(department => (
+                  <React.Fragment key={department}>
+                      <tr className="bg-gray-100">
+                          <th colSpan={3} className="px-6 py-2 text-left text-sm font-semibold text-spk-blue">
+                              {department}
+                          </th>
+                      </tr>
+                      {groupedAndFilteredTeachers[department].map(user => (
+                          <tr key={user.id}>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center">
+                                      <img className="h-10 w-10 rounded-full object-cover" src={user.profileImageUrl} alt="" />
+                                      <div className="ml-4">
+                                          <div className="text-sm font-medium text-gray-900">{user.username}</div>
+                                      </div>
+                                  </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.department}</td>
+                          </tr>
+                      ))}
+                  </React.Fragment>
               ))}
               {activeTab === 'students' && filteredStudents.map(user => (
                 <tr key={user.id}>
@@ -95,7 +114,7 @@ const UserManagementPage: React.FC<UserManagementPageProps> = ({ teachers, stude
               ))}
             </tbody>
           </table>
-          {((activeTab === 'teachers' && filteredTeachers.length === 0) || (activeTab === 'students' && filteredStudents.length === 0)) && (
+          {((activeTab === 'teachers' && Object.keys(groupedAndFilteredTeachers).length === 0) || (activeTab === 'students' && filteredStudents.length === 0)) && (
              <p className="text-center text-gray-500 py-8">No users found.</p>
           )}
         </div>

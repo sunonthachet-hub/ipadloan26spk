@@ -1,5 +1,4 @@
 
-
 // FIX: Explicitly type GAS_URL as a string to prevent TypeScript from inferring a narrow literal type, which was causing comparison errors.
 export const GAS_URL: string = 'https://script.google.com/macros/s/AKfycbzpdXIKXqUsK5pcdVzdRQ6YEXOjTlB3hFC5El_PqLwNKRR79tJb_-lTIqA0z95yxRSzug/exec';
 export const GOOGLE_DRIVE_FOLDER_ID: string = '1YOccTHgmK8R4QAW89PLtcvMFb8DAMu7t';
@@ -48,6 +47,8 @@ export const translations = {
         errorInvalidCredentials: "Invalid username or password.",
         deviceNotFound: "Device not found.",
         confirmDeleteDevice: "Are you sure you want to delete this item?",
+        confirmDeleteDeviceMsg: "Are you sure you want to delete the device {deviceName}?",
+        confirmDeleteProductMsg: "Are you sure you want to delete the product {productName}? This will not affect existing devices linked to it.",
         addSuccess: "Successfully added",
         editSuccess: "Successfully edited",
         notSpecified: "Not Specified",
@@ -94,6 +95,8 @@ export const translations = {
         errorInvalidCredentials: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง",
         deviceNotFound: "ไม่พบอุปกรณ์นี้",
         confirmDeleteDevice: "คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?",
+        confirmDeleteDeviceMsg: "คุณแน่ใจหรือไม่ว่าต้องการลบอุปกรณ์ {deviceName}?",
+        confirmDeleteProductMsg: "คุณแน่ใจหรือไม่ว่าต้องการลบผลิตภัณฑ์ {productName}? การดำเนินการนี้จะไม่ส่งผลต่ออุปกรณ์ที่ผูกกับผลิตภัณฑ์นี้",
         addSuccess: "เพิ่มข้อมูลสำเร็จ",
         editSuccess: "แก้ไขข้อมูลสำเร็จ",
         notSpecified: "ไม่ระบุ",

@@ -234,7 +234,8 @@ const App: React.FC = () => {
     };
 
     const handleDeleteProduct = async (productId: string) => {
-        if (window.confirm(t('confirmDeleteDevice'))) { 
+        const productToDelete = products.find(p => p.id === productId);
+        if (window.confirm(t('confirmDeleteProductMsg').replace('{productName}', productToDelete?.name || productId))) {
             const result = await gasHelper('delete', 'Products', { id: productId });
             if (result.success) {
                 setProducts(prev => prev.filter(p => p.id !== productId));
@@ -280,8 +281,8 @@ const App: React.FC = () => {
     };
     
     const handleDeleteDevice = async (deviceId: string) => {
-        if (window.confirm(t('confirmDeleteDevice'))) {
-            const deviceToDelete = devices.find(d => d.id === deviceId);
+        const deviceToDelete = devices.find(d => d.id === deviceId);
+        if (window.confirm(t('confirmDeleteDeviceMsg').replace('{deviceName}', deviceToDelete?.name || deviceId))) {
             const result = await gasHelper('delete', 'Devices', { id: deviceId });
             if (result.success) {
                 setDevices(prev => prev.filter(d => d.id !== deviceId));
