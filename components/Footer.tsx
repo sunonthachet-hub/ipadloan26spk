@@ -1,11 +1,7 @@
 
 import React from 'react';
 
-interface FooterProps {
-    t: (key: string) => string;
-}
-
-const Footer: React.FC<FooterProps> = ({ t }) => {
+const Footer: React.FC = () => {
     const currentYear = new Date().getFullYear();
     return (
         <footer className="w-full text-center p-4 text-gray-500 text-xs">

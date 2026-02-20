@@ -11,7 +11,7 @@ interface ProductDetailModalProps {
   t: (key: string) => string;
 }
 
-const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose, onSave, productToEdit, t }) => {
+const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ isOpen, onClose, onSave, productToEdit }) => {
   const [productData, setProductData] = useState<Product>({
     id: `PROD-${Date.now()}`,
     name: '',

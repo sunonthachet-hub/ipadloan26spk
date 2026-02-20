@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from 'react';
 
 declare global {
     interface Window {
-        Html5Qrcode: any;
+        Html5Qrcode: unknown;
     }
 }
 
@@ -14,8 +14,8 @@ interface ScannerModalProps {
     t: (key: string) => string;
 }
 
-const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScanSuccess, t }) => {
-    const scannerRef = useRef<any>(null);
+const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScanSuccess }) => {
+    const scannerRef = useRef<unknown>(null);
 
     useEffect(() => {
         if (isOpen) {
@@ -25,7 +25,11 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScanSucc
 
             const startScanner = async () => {
                 try {
-                    await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (errorMessage: string) => {
+                    // Request camera permission explicitly
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                    stream.getTracks().forEach(track => track.stop()); // Stop the stream immediately, html5-qrcode will handle it
+
+                    await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, () => {
                         // console.warn(`QR Code no longer visible.`, errorMessage);
                     });
                 } catch (err) {
@@ -34,19 +38,19 @@ const ScannerModal: React.FC<ScannerModalProps> = ({ isOpen, onClose, onScanSucc
                     onClose();
                 }
             };
-            
+
             startScanner();
 
         } else if (scannerRef.current && scannerRef.current.isScanning) {
-            scannerRef.current.stop().catch((err: any) => console.error("Failed to stop scanner", err));
+            (scannerRef.current as { stop: () => Promise<void> }).stop().catch((err: Error) => console.error("Failed to stop scanner", err));
         }
 
         return () => {
             if (scannerRef.current && scannerRef.current.isScanning) {
-                 scannerRef.current.stop().catch((err: any) => console.error("Failed to stop scanner on cleanup", err));
+                 (scannerRef.current as { stop: () => Promise<void> }).stop().catch((err: Error) => console.error("Failed to stop scanner on cleanup", err));
             }
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
     }, [isOpen]);
 
     if (!isOpen) return null;

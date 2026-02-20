@@ -9,7 +9,7 @@ interface AuthModalProps {
   t: (key: string) => string;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ mode, onClose, onSwitchMode, onLoginSuccess, t }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ onClose, onLoginSuccess, t }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');

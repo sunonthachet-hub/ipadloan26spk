@@ -12,7 +12,7 @@ interface DeviceInfoModalProps {
   currentUser: User | null;
 }
 
-const DeviceInfoModal: React.FC<DeviceInfoModalProps> = ({ isOpen, onClose, device, t, onBorrowRequest, currentUser }) => {
+const DeviceInfoModal: React.FC<DeviceInfoModalProps> = ({ isOpen, onClose, device, onBorrowRequest, currentUser }) => {
   if (!isOpen) return null;
   
   const canBorrow = currentUser && device.status === DeviceStatus.Available && (device.designatedFor === currentUser.role || !device.designatedFor);

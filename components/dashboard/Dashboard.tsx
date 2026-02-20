@@ -1,6 +1,6 @@
 
-import React, { useMemo, useState } from 'react';
-import type { User, Device, Product } from '../../types';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import type { User, Device, Product, ActivityLog } from '../../types';
 import { UserRole, DeviceStatus } from '../../types';
 import DeviceCard from './DeviceCard';
 
@@ -13,6 +13,7 @@ interface DashboardProps {
   onOpenAddDeviceModal: () => void;
   onOpenEditDeviceModal: (device: Device) => void;
   onOpenAssignDeviceModal: () => void;
+  onOpenAssignFromProductModal: (product: Product) => void;
   onBorrowRequest: (deviceId: string) => void;
   onDeleteDevice: (deviceId: string) => void;
   addNotification: (message: string, type: 'info' | 'success' | 'error') => void;
@@ -20,9 +21,10 @@ interface DashboardProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   onAdminScan: () => void;
+  activityLogs: ActivityLog[];
 }
 
-const ProductGroup: React.FC<{product: Product, devices: Device[], t: (key:string) => string}> = ({ product, devices, t }) => {
+const ProductGroup: React.FC<{product: Product, devices: Device[], t: (key:string) => string, onOpenAssignFromProductModal: (product: Product) => void}> = ({ product, devices, t, onOpenAssignFromProductModal }) => {
     const stats = useMemo(() => {
         const productDevices = devices.filter(d => d.productId === product.id);
         return {
@@ -40,6 +42,7 @@ const ProductGroup: React.FC<{product: Product, devices: Device[], t: (key:strin
                 <div>
                     <h3 className="text-xl font-bold text-gray-800">{product.name}</h3>
                     <p className="text-sm text-gray-500">{product.description}</p>
+                    <button onClick={() => onOpenAssignFromProductModal(product)} className="mt-2 text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Assign User</button>
                 </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 text-center">
@@ -65,23 +68,93 @@ const ProductGroup: React.FC<{product: Product, devices: Device[], t: (key:strin
 }
 
 const Pagination: React.FC<{currentPage: number, totalPages: number, onPageChange: (page: number) => void}> = ({ currentPage, totalPages, onPageChange }) => {
-    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+    const getPageNumbers = () => {
+        const pageNumbers = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) {
+                pageNumbers.push(i);
+            }
+        } else {
+            pageNumbers.push(1);
+            if (currentPage > 4) {
+                pageNumbers.push('...');
+            }
+            let start = Math.max(2, currentPage - 2);
+            let end = Math.min(totalPages - 1, currentPage + 2);
+
+            if (currentPage <= 4) {
+                end = 5;
+            }
+
+            if (currentPage >= totalPages - 3) {
+                start = totalPages - 4;
+            }
+
+            for (let i = start; i <= end; i++) {
+                pageNumbers.push(i);
+            }
+
+            if (currentPage < totalPages - 3) {
+                pageNumbers.push('...');
+            }
+            pageNumbers.push(totalPages);
+        }
+        return pageNumbers;
+    };
+
+    const pages = getPageNumbers();
+
     return (
         <div className="flex justify-center items-center gap-2 mt-4">
-            <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50">&laquo;</button>
-            {pages.map(page => (
-                <button key={page} onClick={() => onPageChange(page)} className={`px-3 py-1 rounded-md ${currentPage === page ? 'bg-spk-blue text-white' : 'bg-gray-200'}`}>{page}</button>
+            <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1} className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50">ก่อนหน้า</button>
+            {pages.map((page, index) => (
+                typeof page === 'number' ? (
+                    <button key={index} onClick={() => onPageChange(page)} className={`px-3 py-1 rounded-md ${currentPage === page ? 'bg-spk-blue text-white' : 'bg-gray-200'}`}>{page}</button>
+                ) : (
+                    <span key={index} className="px-3 py-1">{page}</span>
+                )
             ))}
-            <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50">&raquo;</button>
+            <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-3 py-1 rounded-md bg-gray-200 disabled:opacity-50">ถัดไป</button>
         </div>
-    )
-}
+    );
+};
 
 const Dashboard: React.FC<DashboardProps> = (props) => {
-  const { user, devices, products, t, onOpenAddDeviceModal, onOpenEditDeviceModal, onOpenAssignDeviceModal, onOpenMaintenanceModal, onDeviceReturn, onBorrowRequest, onDeleteDevice, searchTerm, setSearchTerm, onAdminScan } = props;
+  const { user, devices, products, t, onOpenAddDeviceModal, onOpenEditDeviceModal, onOpenAssignDeviceModal, onOpenMaintenanceModal, onDeviceReturn, onBorrowRequest, onDeleteDevice, activityLogs } = props;
   const [adminDeviceFilter, setAdminDeviceFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const DEVICES_PER_PAGE = 9;
+
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activityLogs.length > 0) {
+      setHasUnread(true);
+    }
+  }, [activityLogs]);
+
+  const handleTogglePanel = () => {
+    setIsPanelOpen(!isPanelOpen);
+    if (!isPanelOpen) {
+      setHasUnread(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        setIsPanelOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const recentLogs = activityLogs.slice(0, 10);
 
   const { teacherProducts, studentProducts, generalProducts } = useMemo(() => {
     const teacherProducts = products.filter(p => p.designatedFor === UserRole.Teacher);
@@ -120,9 +193,39 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-gray-800">ยินดีต้อนรับ, {user.username.split(' ')[0]}!</h1>
-        <p className="text-gray-500">สรุปภาพรวมอุปกรณ์ของโรงเรียนในวันนี้</p>
+      <header className="flex justify-between items-center">
+        <div>
+            <h1 className="text-2xl font-bold text-gray-800">ยินดีต้อนรับ, {user.username.split(' ')[0]}!</h1>
+            <p className="text-gray-500">สรุปภาพรวมอุปกรณ์ของโรงเรียนในวันนี้</p>
+        </div>
+        <div className="relative" ref={panelRef}>
+            <button onClick={handleTogglePanel} className="relative">
+              <span className="material-icons-outlined text-3xl text-gray-600 hover:text-spk-blue transition-colors">
+                {isPanelOpen ? 'notifications_active' : 'notifications'}
+              </span>
+              {hasUnread && (
+                <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 border-2 border-white"></span>
+              )}
+            </button>
+            {isPanelOpen && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl z-50 border">
+                <div className="p-3 font-bold border-b text-center text-gray-700">Recent Activity</div>
+                <ul className="divide-y max-h-96 overflow-y-auto">
+                  {recentLogs.length > 0 ? (
+                    recentLogs.map((log, index) => (
+                      <li key={`${log.timestamp}-${index}`} className="p-3 text-sm hover:bg-gray-50">
+                        <p className="font-semibold text-gray-800 capitalize">{log.action.replace(/_/g, ' ')}</p>
+                        <p className="text-gray-600">{log.details}</p>
+                        <p className="text-xs text-gray-400 mt-1">{new Date(log.timestamp).toLocaleString()}</p>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="p-4 text-center text-gray-500">No recent activity.</li>
+                  )}
+                </ul>
+              </div>
+            )}
+        </div>
       </header>
 
        {user.role === UserRole.Admin && (
@@ -154,21 +257,21 @@ const Dashboard: React.FC<DashboardProps> = (props) => {
         {studentProducts.length > 0 && (
             <div className="space-y-4">
                 <h2 className="text-lg font-bold text-gray-700 border-b-2 border-spk-yellow pb-1">อุปกรณ์สำหรับนักเรียน</h2>
-                {studentProducts.map(p => <ProductGroup key={p.id} product={p} devices={devices} t={t} />)}
+                {studentProducts.map(p => <ProductGroup key={p.id} product={p} devices={devices} t={t} onOpenAssignFromProductModal={onOpenAssignFromProductModal} />)}
             </div>
         )}
 
         {teacherProducts.length > 0 && (
              <div className="space-y-4">
                 <h2 className="text-lg font-bold text-gray-700 border-b-2 border-spk-yellow pb-1">อุปกรณ์สำหรับครู</h2>
-                {teacherProducts.map(p => <ProductGroup key={p.id} product={p} devices={devices} t={t} />)}
+                {teacherProducts.map(p => <ProductGroup key={p.id} product={p} devices={devices} t={t} onOpenAssignFromProductModal={onOpenAssignFromProductModal} />)}
             </div>
         )}
         
         {generalProducts.length > 0 && (
              <div className="space-y-4">
                 <h2 className="text-lg font-bold text-gray-700 border-b-2 border-spk-yellow pb-1">อุปกรณ์ทั่วไป</h2>
-                {generalProducts.map(p => <ProductGroup key={p.id} product={p} devices={devices} t={t} />)}
+                {generalProducts.map(p => <ProductGroup key={p.id} product={p} devices={devices} t={t} onOpenAssignFromProductModal={onOpenAssignFromProductModal} />)}
             </div>
         )}
         

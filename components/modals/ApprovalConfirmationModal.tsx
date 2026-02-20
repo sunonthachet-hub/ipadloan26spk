@@ -10,7 +10,7 @@ interface ApprovalConfirmationModalProps {
   t: (key: string) => string;
 }
 
-const ApprovalConfirmationModal: React.FC<ApprovalConfirmationModalProps> = ({ isOpen, onClose, device, onConfirm, t }) => {
+const ApprovalConfirmationModal: React.FC<ApprovalConfirmationModalProps> = ({ isOpen, onClose, device, onConfirm }) => {
   const [appleId, setAppleId] = useState('');
   const [borrowNotes, setBorrowNotes] = useState('');
   const [selectedAccessories, setSelectedAccessories] = useState<string[]>([]);
@@ -47,7 +47,7 @@ const ApprovalConfirmationModal: React.FC<ApprovalConfirmationModalProps> = ({ i
         
         <div className="space-y-4">
           <div>
-            <label htmlFor="appleId" className="block text-sm font-medium text-gray-700">Borrower's Apple ID</label>
+            <label htmlFor="appleId" className="block text-sm font-medium text-gray-700">Borrower&apos;s Apple ID</label>
             <input
               type="email"
               id="appleId"

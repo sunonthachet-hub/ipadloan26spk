@@ -9,7 +9,7 @@ interface SelectProfilePictureModalProps {
   t: (key: string) => string;
 }
 
-const SelectProfilePictureModal: React.FC<SelectProfilePictureModalProps> = ({ isOpen, onClose, onSelect, t }) => {
+const SelectProfilePictureModal: React.FC<SelectProfilePictureModalProps> = ({ isOpen, onClose, onSelect }) => {
   if (!isOpen) return null;
 
   return (

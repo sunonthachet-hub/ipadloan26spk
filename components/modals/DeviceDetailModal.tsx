@@ -12,7 +12,7 @@ interface DeviceDetailModalProps {
   t: (key: string) => string;
 }
 
-const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ isOpen, onClose, onSave, deviceToEdit, products, t }) => {
+const DeviceDetailModal: React.FC<DeviceDetailModalProps> = ({ isOpen, onClose, onSave, deviceToEdit, products }) => {
   const [deviceData, setDeviceData] = useState<Device>({
     id: `DVC-${Date.now()}`,
     serialNumber: '',

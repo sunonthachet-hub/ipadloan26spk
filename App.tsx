@@ -10,6 +10,7 @@ import NotificationToast from './components/NotificationToast';
 import Footer from './components/Footer';
 import AuthModal from './components/auth/AuthModal';
 import Dashboard from './components/dashboard/Dashboard';
+
 import BottomNavBar from './components/navigation/BottomNavBar';
 import LandingPage from './components/LandingPage';
 import HistoryPage from './components/history/HistoryPage';
@@ -24,6 +25,7 @@ import ScannerModal from './components/modals/ScannerModal';
 import DeviceInfoModal from './components/modals/DeviceInfoModal';
 import ApprovalConfirmationModal from './components/modals/ApprovalConfirmationModal';
 import AssignDeviceWizardModal from './components/modals/AssignDeviceWizardModal';
+import AssignFromProductModal from './components/modals/AssignFromProductModal';
 import SuccessBorrowModal from './components/modals/SuccessBorrowModal';
 import SelectProfilePictureModal from './components/modals/SelectProfilePictureModal';
 import UserManagementPage from './components/admin/UserManagementPage';
@@ -50,6 +52,7 @@ const App: React.FC = () => {
     const [history, setHistory] = useState<HistoryEntry[]>([]);
     const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
     const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+    
 
     const [isMaintenanceModalOpen, setMaintenanceModalOpen] = useState(false);
     const [isICloudModalOpen, setICloudModalOpen] = useState(false);
@@ -66,6 +69,7 @@ const App: React.FC = () => {
     const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isAssignWizardOpen, setAssignWizardOpen] = useState(false);
+    const [assignFromProduct, setAssignFromProduct] = useState<Product | null>(null);
     const [isApprovalConfirmationModalOpen, setApprovalConfirmationModalOpen] = useState(false);
     const [deviceToApprove, setDeviceToApprove] = useState<Device | null>(null);
     const [isSuccessBorrowModalOpen, setSuccessBorrowModalOpen] = useState(false);
@@ -77,8 +81,8 @@ const App: React.FC = () => {
         return translations[language as keyof typeof translations][key] || key;
     }, [language]);
     
-    const sanitizeForSheet = useCallback((payload: Record<string, any>): Record<string, any> => {
-        const sanitized: Record<string, any> = { ...payload };
+    const sanitizeForSheet = useCallback((payload: Record<string, unknown>): Record<string, unknown> => {
+        const sanitized: Record<string, unknown> = { ...payload };
         const exceptions = ['serialNumber', 'appleId']; // Keys to exclude
 
         for (const key in sanitized) {
@@ -105,8 +109,13 @@ const App: React.FC = () => {
             const payload: ActivityLog = { timestamp: new Date().toISOString(), userEmail: currentUser.email, action, details };
             if (GAS_URL !== 'YOUR_GOOGLE_APP_SCRIPT_WEB_APP_URL_HERE') {
                 await gasHelper('append', 'ActivityLogs', sanitizeForSheet(payload));
+            const notificationActions = ['BORROW_REQUESTED', 'REQUEST_APPROVED', 'REQUEST_REJECTED', 'DEVICE_RETURNED', 'DEVICE_ASSIGNED'];
+            if (notificationActions.includes(action)) {
+                addNotification(details, 'info');
             }
             setActivityLogs(prev => [payload, ...prev]);
+            }
+            
         }
     }, [currentUser, sanitizeForSheet]);
 
@@ -120,7 +129,7 @@ const App: React.FC = () => {
           const mockProducts: Product[] = [{ id: 'PROD-001', name: 'iPad Pro 11"', category: DeviceCategory.iPad, imageUrl: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=800', description: 'Powerful iPad for Pros', designatedFor: UserRole.Teacher, defaultAccessories: ['Case', 'Stylus'] }];
           setProducts(mockProducts);
           
-          const rawDevices: any[] = [
+          const rawDevices: Partial<Device>[] = [
               { id: 'ipad-001', serialNumber: 'SKP-IP-001', productId: 'PROD-001', status: DeviceStatus.Available },
               { id: 'ipad-002', serialNumber: 'SKP-IP-002', productId: 'PROD-001', status: DeviceStatus.Borrowed, borrowedBy: 'สมชาย ใจดี', borrowDate: new Date('2023-08-15').toISOString(), dueDate: new Date('2025-02-15').toISOString(), appleId: 'somchai.j@icloud.com' },
               { id: 'ipad-003', serialNumber: 'SKP-IP-003', productId: 'PROD-001', status: DeviceStatus.PendingApproval, borrowedBy: 'คุณครูมานะ เรียนเก่ง'},
@@ -173,18 +182,18 @@ const App: React.FC = () => {
           setTeachers(teachersRes.data || []);
           setStudents(allStudents);
           setHistory(historyRes.data || []);
-          setServiceRequests(serviceRes.data ? serviceRes.data.map((r: any) => {
+          setServiceRequests(serviceRes.data ? serviceRes.data.map((r: ServiceRequest) => {
               const dev = hydratedDevices.find((d: Device) => d.id === r.deviceId);
               return {...r, device: dev || {name: r.deviceName, serialNumber: r.deviceSerialNumber}};
           }) : []);
           setActivityLogs((logsRes.data || []).sort((a: ActivityLog, b: ActivityLog) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-      } catch (err: any) {
+      } catch (err) {
           setError(err.message);
           addNotification(`Error loading data: ${err.message}`, 'error');
       } finally {
           setIsLoading(false);
       }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
     }, []);
 
     useEffect(() => {
@@ -194,7 +203,7 @@ const App: React.FC = () => {
     const handleLoginSuccess = useCallback((username: string, password?: string) => {
         const usernameLower = username.toLowerCase();
         if (usernameLower === 'admin' && password === 'spkadmin') {
-            setCurrentUser({ id: 'admin-user', username: 'Admin', email: 'admin@spk.ac.th', role: UserRole.Admin, profileImageUrl: `https://i.pravatar.cc/150?u=admin`, department: TeacherDepartment.Executive });
+            setCurrentUser({ id: 'admin-user', username: 'Admin', email: 'admin@spk.ac.th', role: UserRole.Admin, profileImageUrl: 'https://images.unsplash.com/photo-1635260191916-511fa73aa2dd?q', department: TeacherDepartment.Executive });
             setAuthModalState('closed'); setActiveTab('home'); return;
         }
         const foundLoginUser = users.find(u => u.email.toLowerCase() === usernameLower);
@@ -490,7 +499,7 @@ const App: React.FC = () => {
                     setTeachers(prev => prev.map(t => t.id === updatedUser.id ? (updatedUser as TeacherUser) : t));
                     addNotification("Profile picture updated!", "success");
                 } else { throw new Error(result.error); }
-            } catch (error: any) {
+            } catch (error) {
                 addNotification(error.message, 'error');
             }
         }
@@ -541,7 +550,7 @@ const App: React.FC = () => {
     const renderContent = () => {
       if (!currentUser) return null;
       switch (activeTab) {
-        case 'home': return <Dashboard user={currentUser} devices={devices} products={products} onOpenMaintenanceModal={handleOpenMaintenanceModal} onDeviceReturn={handleDeviceReturn} onOpenAddDeviceModal={() => openDetailModal(null)} onOpenEditDeviceModal={openDetailModal} onOpenAssignDeviceModal={() => setAssignWizardOpen(true)} addNotification={addNotification} t={t} searchTerm={pageSearchTerm} setSearchTerm={setPageSearchTerm} onAdminScan={() => handleOpenScanner('admin')} onBorrowRequest={handleBorrowRequest} onDeleteDevice={handleDeleteDevice} />;
+        case 'home': return <Dashboard user={currentUser} devices={devices} products={products} onOpenMaintenanceModal={handleOpenMaintenanceModal} onDeviceReturn={handleDeviceReturn} onOpenAddDeviceModal={() => openDetailModal(null)} onOpenEditDeviceModal={openDetailModal} onOpenAssignDeviceModal={() => setAssignWizardOpen(true)} onOpenAssignFromProductModal={setAssignFromProduct} addNotification={addNotification} t={t} searchTerm={pageSearchTerm} setSearchTerm={setPageSearchTerm} onAdminScan={() => handleOpenScanner('admin')} onBorrowRequest={handleBorrowRequest} onDeleteDevice={handleDeleteDevice} activityLogs={activityLogs} />;
         case 'services': return <ServicesPage user={currentUser} requests={serviceRequests} setRequests={setServiceRequests} t={t} addNotification={addNotification} logActivity={logActivity} sanitizeForSheet={sanitizeForSheet} />;
         case 'approvals': return <ApprovalPage devices={devices} onApproval={handleApproval} t={t} />;
         case 'history': return <HistoryPage history={history} devices={devices} t={t} />;
@@ -549,7 +558,7 @@ const App: React.FC = () => {
         case 'userManagement': return <UserManagementPage teachers={teachers} students={students} t={t} />;
         case 'reports': return <ReportsPage borrowHistory={history} t={t} devices={devices} />;
         case 'productManagement': return <ProductManagementPage products={products} onEditProduct={openProductModal} onAddProduct={() => openProductModal(null)} onDeleteProduct={handleDeleteProduct} t={t} searchTerm={pageSearchTerm} setSearchTerm={setPageSearchTerm} />;
-        default: return <Dashboard user={currentUser} devices={devices} products={products} onOpenMaintenanceModal={handleOpenMaintenanceModal} onDeviceReturn={handleDeviceReturn} onOpenAddDeviceModal={() => openDetailModal(null)} onOpenEditDeviceModal={openDetailModal} onOpenAssignDeviceModal={() => setAssignWizardOpen(true)} addNotification={addNotification} t={t} searchTerm={pageSearchTerm} setSearchTerm={setPageSearchTerm} onAdminScan={() => handleOpenScanner('admin')} onBorrowRequest={handleBorrowRequest} onDeleteDevice={handleDeleteDevice} />;
+        default: return <Dashboard user={currentUser} devices={devices} products={products} onOpenMaintenanceModal={handleOpenMaintenanceModal} onDeviceReturn={handleDeviceReturn} onOpenAddDeviceModal={() => openDetailModal(null)} onOpenEditDeviceModal={openDetailModal} onOpenAssignDeviceModal={() => setAssignWizardOpen(true)} addNotification={addNotification} t={t} searchTerm={pageSearchTerm} setSearchTerm={setPageSearchTerm} onAdminScan={() => handleOpenScanner('admin')} onBorrowRequest={handleBorrowRequest} onDeleteDevice={handleDeleteDevice} activityLogs={activityLogs} />;
       }
     };
 
@@ -562,6 +571,7 @@ const App: React.FC = () => {
         
         {currentUser ? (
           <div className="pb-24">
+            
             <main className="p-2 sm:p-4 lg:p-6">{renderContent()}</main>
             <Footer t={t} />
             <BottomNavBar user={currentUser} activeTab={activeTab} setActiveTab={setActiveTab} t={t} onScanClick={() => handleOpenScanner('user')} pendingApprovalsCount={devices.filter(d => d.status === DeviceStatus.PendingApproval).length}/>
@@ -569,6 +579,7 @@ const App: React.FC = () => {
         ) : isVisitorMode ? (
             <VisitorPage
                 devices={devices}
+                products={products}
                 t={t}
                 onLoginClick={() => {
                     setIsVisitorMode(false);
@@ -594,7 +605,17 @@ const App: React.FC = () => {
         {isScannerOpen && <ScannerModal isOpen={isScannerOpen} onClose={() => setScannerOpen(false)} onScanSuccess={handleScanSuccess} t={t} />}
         {isDeviceInfoModalOpen && scannedDevice && <DeviceInfoModal isOpen={isDeviceInfoModalOpen} onClose={() => setDeviceInfoModalOpen(false)} device={scannedDevice} t={t} onBorrowRequest={handleBorrowRequest} currentUser={currentUser}/>}
         {isApprovalConfirmationModalOpen && deviceToApprove && <ApprovalConfirmationModal isOpen={isApprovalConfirmationModalOpen} onClose={() => {setApprovalConfirmationModalOpen(false); setDeviceToApprove(null);}} device={deviceToApprove} onConfirm={processApproval} t={t} />}
-        <AssignDeviceWizardModal isOpen={isAssignWizardOpen} onClose={() => setAssignWizardOpen(false)} students={students} teachers={teachers} devices={devices} onAssign={handleAssignDevice} t={t} onScanRequest={handleScanRequest} />
+        <AssignDeviceWizardModal isOpen={isAssignWizardOpen} onClose={() => setAssignWizardOpen(false)} students={students} teachers={teachers} devices={devices} onAssign={handleAssignDevice} t={t} />
+            <AssignFromProductModal 
+                isOpen={!!assignFromProduct}
+                onClose={() => setAssignFromProduct(null)}
+                product={assignFromProduct}
+                students={students}
+                teachers={teachers}
+                devices={devices}
+                onAssign={handleAssignDevice}
+                t={t}
+            />
         <SuccessBorrowModal isOpen={isSuccessBorrowModalOpen} onClose={() => setSuccessBorrowModalOpen(false)} borrowerName={borrowSuccessInfo.borrowerName} borrowerRole={borrowSuccessInfo.borrowerRole} deviceName={borrowSuccessInfo.deviceName} t={t} />
         <SelectProfilePictureModal isOpen={isProfilePictureModalOpen} onClose={() => setProfilePictureModalOpen(false)} onSelect={handleStudentProfilePictureUpdate} t={t} />
       </div>

@@ -11,10 +11,10 @@ interface ICloudModalProps {
   t: (key: string) => string;
 }
 
-const ICloudModal: React.FC<ICloudModalProps> = ({ isOpen, onClose, device, addNotification, onReturn, t }) => {
+const ICloudModal: React.FC<ICloudModalProps> = ({ isOpen, onClose, device, addNotification, onReturn }) => {
   const [isChecked, setIsChecked] = useState(false);
   const [returnNotes, setReturnNotes] = useState('');
-  const [icloudEmail, setIcloudEmail] = useState(device.appleId || '');
+  const [icloudEmail] = useState(device.appleId || '');
 
   const handleReturn = () => {
     if (!isChecked) {

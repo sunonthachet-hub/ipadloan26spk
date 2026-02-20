@@ -28,7 +28,7 @@ const MaintenanceModal: React.FC<MaintenanceModalProps> = ({ isOpen, onClose, de
         const url = await handleFileUpload(file, 5);
         setRepairImageUrl(url);
         addNotification('Upload successful!', 'success');
-      } catch (error: any) {
+      } catch (error) {
         addNotification(error.message, 'error');
       } finally {
         setIsUploading(false);

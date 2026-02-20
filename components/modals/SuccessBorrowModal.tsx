@@ -10,7 +10,7 @@ interface SuccessBorrowModalProps {
   t: (key: string) => string;
 }
 
-const SuccessBorrowModal: React.FC<SuccessBorrowModalProps> = ({ isOpen, onClose, borrowerName, borrowerRole, deviceName, t }) => {
+const SuccessBorrowModal: React.FC<SuccessBorrowModalProps> = ({ isOpen, onClose, borrowerName, borrowerRole, deviceName }) => {
   if (!isOpen) return null;
   
   const borrowPeriod = borrowerRole === 'Student' ? '2.5 years' : '5 years';

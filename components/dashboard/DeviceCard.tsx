@@ -39,7 +39,7 @@ const DeviceCard: React.FC<DeviceCardProps> = (props) => {
                     <div className="text-xs mt-2">
                         <span className={`px-2 py-1 rounded-full text-white ${
                             { [DeviceStatus.Available]: 'bg-green-500', [DeviceStatus.Borrowed]: 'bg-blue-500', [DeviceStatus.Maintenance]: 'bg-orange-500', [DeviceStatus.PendingApproval]: 'bg-yellow-500 text-black', [DeviceStatus.Lost]: 'bg-red-500' }[device.status]
-                        }`}>{t(device.status.toLowerCase() as any) || device.status}</span>
+                        }`}>{t(device.status.toLowerCase() as keyof typeof translations.en) || device.status}</span>
                     </div>
                     {device.status === DeviceStatus.Borrowed && <p className="text-xs mt-1 text-gray-600">Borrowed by: {device.borrowedBy}</p>}
                 </div>

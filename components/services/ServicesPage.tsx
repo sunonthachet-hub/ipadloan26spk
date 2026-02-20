@@ -11,7 +11,7 @@ interface ServicesPageProps {
   t: (key: string) => string;
   addNotification: (message: string, type: 'info' | 'success' | 'error') => void;
   logActivity: (action: string, details: string) => Promise<void>;
-  sanitizeForSheet: (payload: Record<string, any>) => Record<string, any>;
+  sanitizeForSheet: (payload: Record<string, unknown>) => Record<string, unknown>;
 }
 
 const ServicesPage: React.FC<ServicesPageProps> = ({ user, requests, setRequests, t, addNotification, logActivity, sanitizeForSheet }) => {

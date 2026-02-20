@@ -1,7 +1,7 @@
 
 import { GAS_URL } from '../constants';
 
-export const gasHelper = async (action: string, sheet: string | null, payload: any = {}): Promise<{ success: boolean; data?: any; error?: string; url?: string }> => {
+export const gasHelper = async (action: string, sheet: string | null, payload: unknown = {}): Promise<{ success: boolean; data?: unknown; error?: string; url?: string }> => {
     if (GAS_URL === 'YOUR_GOOGLE_APP_SCRIPT_WEB_APP_URL_HERE' && action !== 'read') {
         console.log(`DEMO MODE: Pretending to ${action} in ${sheet} with`, payload);
         

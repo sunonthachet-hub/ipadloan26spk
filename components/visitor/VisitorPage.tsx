@@ -1,80 +1,64 @@
 
-import React, { useState, useMemo } from 'react';
-import type { Device } from '../../types';
-import DeviceCard from '../dashboard/DeviceCard';
+import React, { useMemo } from 'react';
+import type { Device, Product } from '../../types';
+import { DeviceStatus } from '../../types';
 
 interface VisitorPageProps {
   devices: Device[];
+  products: Product[];
   t: (key: string) => string;
   onLoginClick: () => void;
   onExit: () => void;
 }
 
-const VisitorPage: React.FC<VisitorPageProps> = ({ devices, t, onLoginClick, onExit }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const filteredDevices = useMemo(() => {
-    return devices.filter(device => 
-      searchTerm ? 
-        device.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        device.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) 
-      : true
-    );
-  }, [devices, searchTerm]);
+const VisitorProductGroup: React.FC<{product: Product, devices: Device[], t: (key:string) => string}> = ({ product, devices, t }) => {
+    const stats = useMemo(() => {
+        const productDevices = devices.filter(d => d.productId === product.id);
+        return {
+            total: productDevices.length,
+            available: productDevices.filter(d => d.status === DeviceStatus.Available).length,
+        }
+    }, [product, devices]);
+    
+    return (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b flex items-center gap-4">
+                <img src={product.imageUrl} alt={product.name} className="w-20 h-20 object-cover rounded-md"/>
+                <div>
+                    <h3 className="text-xl font-bold text-gray-800">{product.name}</h3>
+                    <p className="text-sm text-gray-500">{product.description}</p>
+                </div>
+            </div>
+            <div className="grid grid-cols-2 text-center">
+                <div className="p-3">
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                    <p className="text-xs text-gray-500 uppercase">Total Devices</p>
+                </div>
+                 <div className="p-3 bg-green-50">
+                    <p className="text-2xl font-bold text-green-600">{stats.available}</p>
+                    <p className="text-xs text-green-500 uppercase">{t('available')}</p>
+                </div>
+            </div>
+        </div>
+    )
+}
 
+const VisitorPage: React.FC<VisitorPageProps> = ({ devices, products, t, onLoginClick, onExit }) => {
   return (
-    <div className="min-h-screen bg-spk-gray">
-      {/* Header */}
-      <header className="bg-white shadow-md sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={onExit}>
-              <img src="https://www.spk.ac.th/home/wp-content/uploads/2025/10/spk-logo-png-new-1.png" alt="SPK Logo" className="w-10 h-10" />
-              <h1 className="text-xl font-bold text-spk-blue">iPad Check</h1>
+    <div className="min-h-screen bg-spk-gray p-4 sm:p-6 lg:p-8">
+        <header className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-spk-blue">SPK Device Hub - Available Devices</h1>
+            <div>
+                <button onClick={onLoginClick} className="text-white bg-spk-blue hover:bg-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2">{t('login')}</button>
+                <button onClick={onExit} className="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100 font-medium rounded-lg text-sm px-5 py-2.5">Exit Visitor Mode</button>
             </div>
-            <div className="flex items-center gap-4">
-              <button onClick={onLoginClick} className="bg-spk-blue text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:bg-blue-800 transition-colors">
-                {t('login')}
-              </button>
-              <button onClick={onExit} className="text-gray-500 hover:text-gray-800">
-                <span className="material-icons-outlined">close</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      {/* Main Content */}
-      <main className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">{t('allDevices')}</h2>
-          
-          {/* Search Bar */}
-          <div className="relative mb-6">
-            <input
-              type="text"
-              placeholder={t('searchDevice')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-spk-yellow text-lg"
-            />
-            <span className="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">search</span>
-          </div>
+        </header>
 
-          {/* Device Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDevices.map(device => (
-              <DeviceCard
-                key={device.id}
-                device={device}
-                user={null} // Visitor mode, no user
-                t={t}
-              />
+        <div className="space-y-6">
+            {products.map(product => (
+                <VisitorProductGroup key={product.id} product={product} devices={devices} t={t} />
             ))}
-            {filteredDevices.length === 0 && <p className="text-gray-500 col-span-full text-center py-8">No devices found.</p>}
-          </div>
         </div>
-      </main>
     </div>
   );
 };
